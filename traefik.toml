@@ -33,18 +33,27 @@ address = ":8080"
 
 # Let's encrypt configuration
 [acme]
-email = "admin@mydomain.me" #any email id will work
+email = "admin@mydomain.me"
 storage="/etc/traefik/acme/acme.json"
+caServer = "https://acme-v02.api.letsencrypt.org/directory" #This one is for Production
+#caServer = "https://acme-staging-v02.api.letsencrypt.org/directory" #For staging and testing
 entryPoint = "https"
 acmeLogging=true 
 onDemand = false #create certificate when container is created
+#onHostRule = true #disable for wildcard domains
+# Use a HTTP-01 acme challenge rather than TLS-SNI-01 challenge
+#[acme.httpChallenge] #does not work with wildcard domains, use dns challenge
+#  entryPoint = "http" #does not work with wildcard domains
 [acme.dnsChallenge]
-  provider = "cloudflare"
-  delayBeforeCheck = 300
+provider = "cloudflare"
+delayBeforeCheck = 0
 [[acme.domains]]
-   main = "mydomain.me"
+main = "mydomain.me"
+#   sans = ["name.mydomain.net"]
 [[acme.domains]]
-   main = "*.mydomain.me"
+main = "*.mydomain.me"
+[traefikLog]
+filePath = "/etc/traefik/traefik.log"
    
 # Connection to docker host system (docker.sock)
 [docker]
