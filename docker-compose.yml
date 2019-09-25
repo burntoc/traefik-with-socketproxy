@@ -1,46 +1,53 @@
 version: "3.6"
-  
+
 services:
 # Start the docker-socket-proxy container for traefik bound to `dockersocketnet`
 # Grant read only GET request access to SERVICES/NETWORKS/TASKs apis
 # there are no published ports so only other services granted access on the 
-# dockersocketnet network can hit this named service @ 2375 
-  socket-proxy:
+# dockersocketnet network can hit this named service @ 2375
+  docker-socket-proxy:
     image: tecnativa/docker-socket-proxy
+    expose:
+      - 2375
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    expose
-      - 2375
     environment:
-      SERVICES: 1
-      TASKS: 1
-      NETWORKS: 1
+      - SERVICES=1
+      - NETWORKS=1
+      - TASKS=1
+      - CONTAINERS=1
+      - IMAGES=1 
     networks:
       - dockersocketnet
 
   traefik:
-    image: traefik:alpine
+    hostname: traefik
+    image: traefik:maroilles
     container_name: traefik
     restart: always
     volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock:ro
       # create these toml files first
       - ${USERDIR}/docker/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
       - ${USERDIR}/docker/traefik/rules.toml:/etc/traefik/rules.toml:ro
       - ${USERDIR}/docker/traefik/acme:/etc/traefik/acme
       - ${USERDIR}/docker/shared:/shared
       - ${USERDIR}/docker/traefik/log:/var/log
-    command: --docker --docker.endpoint=tcp://socket-proxy:2375 --docker.watch 
     ports:
-      - 80:80
-      - 443:443
-      - 8080:8080
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
     networks:
       - dockersocketnet
-      - traefik_proxy
+      - traefik_proxy 
     environment:
       - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
       - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
-      - DOCKER_HOST=tcp://socket-proxy:2375
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+    command:
+      - --web
+      - --accessLog.filePath=/var/log/access.log
+      - --accessLog.filters.statusCodes=400-499
     labels:
       - "traefik.enable=true"
       - "traefik.backend=traefik"
@@ -59,12 +66,32 @@ services:
       - "traefik.frontend.headers.STSPreload=true"
       - "traefik.frontend.headers.frameDeny=true"
 
+#    fail2ban:
+#        image: crazymax/fail2ban:latest
+#        network_mode: "host"
+#        cap_add:
+#          - NET_ADMIN
+#          - NET_RAW
+#        volumes:
+#          - ${USERDIR}/docker/traefik/log:/var/log:ro
+#          - ${USERDIR}/docker/fail2ban/data:/data
+
+#    watchtower:
+#        container_name: watchtower
+#        hostname: watchtower
+#        restart: always
+#        image: v2tec/watchtower
+#        volumes:
+#          - /var/run/docker.sock:/var/run/docker.sock
+#        command: --schedule "0 0 4 * * *" --cleanup
+
   whoami:
     image: emilevauge/whoami
+    container_name: whoami_1
     networks:
-     - traefik_proxy
-     - "traefik.enable=true"
+      - traefik_proxy
     labels:
+      - "traefik.enable=true"
       - "traefik.frontend.rule=Host:whoami.${DOMAINNAME}"
       - "traefik.docker.network=traefik_proxy"
       - "traefik.frontend.passHostHeader=true"
@@ -77,12 +104,41 @@ services:
       - "traefik.frontend.headers.STSIncludeSubdomains=true"
       - "traefik.frontend.headers.STSPreload=true"
       - "traefik.frontend.headers.frameDeny=true"
-    networks:
-      - traefik_proxy
+          
+#    portainer:
+#        container_name: portainer
+#        restart: always  
+#        image: portainer/portainer:latest
+#        volumes:
+#          - ${USERDIR}/docker/portainer:/data
+#          - ${USERDIR}/docker/shared:/shared
+#          - /var/run/docker.sock:/var/run/docker.sock
+#        ports:
+#          - "9000:9000"
+#        environment:
+#          - TZ=${TZ}
+#        networks:
+#          - traefik_proxy
+#        labels:
+#          - "traefik.enable=true"
+#          - "traefik.port=9000"
+#          - "traefik.backend=portainer"
+#          - "traefik.frontend.rule=Host:portainer.${DOMAINNAME}"
+#          - "traefik.protocol=https"
+#          - "traefik.docker.network=traefik_proxy"
+#          - "traefik.frontend.passHostHeader=true"
+#          - "traefik.frontend.headers.SSLRedirect=true"
+#          - "traefik.frontend.headers.STSSeconds=315360000"
+#          - "traefik.frontend.headers.browserXSSFilter=true"
+#          - "traefik.frontend.headers.contentTypeNosniff=true"
+#          - "traefik.frontend.headers.forceSTSHeader=true"
+#          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+#          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+#          - "traefik.frontend.headers.STSPreload=true"
+#          - "traefik.frontend.headers.frameDeny=true"
+#          - "traefik.frontend.headers.customFrameOptionsValue=SAMEORIGIN"
 
 networks:
   dockersocketnet:
-      name: dockersocketnet
   traefik_proxy:
-    external:
-      name: traefik_proxy
+
