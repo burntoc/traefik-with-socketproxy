@@ -57,7 +57,7 @@ filePath = "/etc/traefik/traefik.log"
    
 # Connection to docker host system (docker.sock)
 [docker]
-endpoint = "tcp://localhost:2375"
+endpoint = "tcp://docker-socket-proxy:2375"
 domain = "mydomain.me"
 watch = true
 # This will hide all docker containers that don't have explicitly  
