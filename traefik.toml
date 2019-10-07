@@ -31,6 +31,23 @@ address = ":8080"
   watch = true
   filename = "/etc/traefik/rules.toml"
 
+  [frontends]
+    [frontends.radarr]
+      backend = "radarr"
+      [frontends.radarr.routes.mydomain.me]
+        rule = "Host:radarr.mydomain.me"
+    [frontends.portainer60]
+      backend = "portainer60"
+      [frontends.portainer60.routes.mydomain.me]
+        rule = "Host:portainer60.mydomain.me"
+
+  [backends]
+    [backends.radarr.servers.radarr]
+      url = "http://guesthostip:8123"
+    [backends.portainer60.servers.portainer60]
+      url = "http://guesthostip:9000"
+
+
 # Let's encrypt configuration
 [acme]
 email = "admin@mydomain.me"
