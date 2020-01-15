@@ -1,14 +1,14 @@
 #debug = true
 
-logLevel = "ERROR" #DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+logLevel = "ERROR" 
 InsecureSkipVerify = true 
-defaultEntryPoints = ["https", "http"]
+#defaultEntryPoints = ["https", "http"]
+defaultEntryPoints = ["https"]
 
-# WEB interface of Traefik - it will show web page with overview of frontend and backend configurations 
-[api]
-  entryPoint = "dashboard"
-  dashboard = true
-  address = ":8080"
+#  entryPoint = "dashboard"
+#  dashboard = true
+# debug = true
+# address = ":8080"
 
 # Force HTTPS
 [entryPoints]
@@ -20,12 +20,14 @@ defaultEntryPoints = ["https", "http"]
   address = ":443"
     [entryPoints.https.tls]
 
-[entryPoints.dashboard]
-address = ":8080"
-[entryPoints.dashboard.auth]
-    [entryPoints.dashboard.auth.basic]
-        users = ["user:$encryptedpass"]
-[retry]
+[api]
+
+#[entryPoints.dashboard]
+#address = ":8080"
+#[entryPoints.dashboard.auth]
+#    [entryPoints.dashboard.auth.basic]
+#        users = ["username:encyptedpass"] #redacted
+#[retry]
 
 [file]
   watch = true
@@ -33,32 +35,29 @@ address = ":8080"
 
 # Let's encrypt configuration
 [acme]
-email = "admin@mydomain.me"
+email = "admin@mydomain.net" #redacted
 storage="/etc/traefik/acme/acme.json"
-caServer = "https://acme-v02.api.letsencrypt.org/directory" #This one is for Production
-#caServer = "https://acme-staging-v02.api.letsencrypt.org/directory" #For staging and testing
+#caServer = "https://acme-v02.api.letsencrypt.org/directory" #This one is for Production
+caServer = "https://acme-staging-v02.api.letsencrypt.org/directory" #For staging and testing
 entryPoint = "https"
 acmeLogging=true 
 onDemand = false #create certificate when container is created
-#onHostRule = true #disable for wildcard domains
-# Use a HTTP-01 acme challenge rather than TLS-SNI-01 challenge
-#[acme.httpChallenge] #does not work with wildcard domains, use dns challenge
-#  entryPoint = "http" #does not work with wildcard domains
+
 [acme.dnsChallenge]
 provider = "cloudflare"
 delayBeforeCheck = 0
 [[acme.domains]]
-main = "mydomain.me"
+main = "mydomain.net" #redacted
 #   sans = ["name.mydomain.net"]
 [[acme.domains]]
-main = "*.mydomain.me"
+main = "*.mydomain.net" #redacted
 [traefikLog]
 filePath = "/etc/traefik/traefik.log"
    
 # Connection to docker host system (docker.sock)
 [docker]
 endpoint = "tcp://docker-socket-proxy:2375"
-domain = "mydomain.me"
+domain = "mydomain.net" #redacted
 watch = true
 # This will hide all docker containers that don't have explicitly  
 # set label to "enable"
